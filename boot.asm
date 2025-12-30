@@ -1,12 +1,13 @@
 [BITS 16]
 global start
 section .boot
-
-codeOffset equ 0x8
-dataOffset equ 0x10
-
+codeOffset equ gdt_code - gdt_start
+dataOffset equ gdt_data - gdt_start
 start:
-    jmp real_start
+    jmp short real_start
+    nop
+    
+    times 33 db 0 
 
 BOOT_DRIVE db 0
 
@@ -21,19 +22,38 @@ real_start:
 
     mov [BOOT_DRIVE], dl 
 
+
+    mov ah, 0x41
+    mov bx, 0x55aa
+    mov dl, [BOOT_DRIVE]
+    int 0x13
+    jc legacy_fallback
+
     mov di, 3
-.retry_load:
+.retry_lba:
     mov ah, 0x42
     mov dl, [BOOT_DRIVE] 
     mov si, disk_packet
     int 0x13
     jnc load_success
-
-   
-    mov byte [BOOT_DRIVE], 0x80
     
     dec di
-    jnz .retry_load
+    jnz .retry_lba
+    jmp disk_error
+
+legacy_fallback:
+
+    mov ax, 0x1000
+    mov es, ax
+    xor bx, bx
+    mov ah, 0x02
+    mov al, 20
+    mov ch, 0
+    mov dh, 0
+    mov cl, 2
+    mov dl, [BOOT_DRIVE]
+    int 0x13
+    jnc load_success
     jmp disk_error
 
 load_success:
