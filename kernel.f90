@@ -3,7 +3,7 @@ module kernel_data
     implicit none
     integer(kind=c_int8_t), pointer :: vga(:)
     character(len=13), parameter :: OS_NAME = "TJBOS FORTRAN"
-
+	character(len=7), parameter :: OS_GREETING = "WELCOME!"
 contains
 
     subroutine init_vga()
@@ -59,11 +59,12 @@ subroutine kmain() bind(c, name="kmain")
     call clear_vga(int(z'1F', c_int8_t))
 
 
-    call print_str(1, 1, OS_NAME, 13, int(z'1E', c_int8_t))
+    call print_str(1, 1, OS_NAME, 13, int(z'1A', c_int8_t))
+    call print_str(2, 1, OS_GREETING, 7, int(z'1F', c_int8_t))
 
 	counter = 0
     do
-		call print_digit(1, 79, mod(counter, 10), int(z'4F', c_int8_t))
+		call print_digit(1, 79, mod(counter, 10), int(z'1F', c_int8_t))
         
         counter = counter + 1
         
