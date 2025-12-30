@@ -26,29 +26,31 @@ real_start:
     mov di, 3
 .retry_load:
     
-    xor ax, ax    
+    mov ah, 0x42
     mov dl, [BOOT_DRIVE]
+    mov si, disk_packet     
     int 0x13
-    jc .retry_dec 
+    jnc load_success  
 
-    
-    mov ax, 0x1000      
-    mov es, ax
-    xor bx, bx          
-    
-    mov ah, 0x02        
-    mov al, 10          
-    mov ch, 0x00        
-    mov dh, 0x00        
-    mov cl, 0x02        
+.retry_dec:
+
+    xor ax, ax
     mov dl, [BOOT_DRIVE]
     int 0x13
-    jnc load_success    
-.retry_dec:
+    
     dec di
     jnz .retry_load
     jmp disk_error
 
+
+align 4
+disk_packet:
+    db 0x10 
+    db 0x00 
+    dw 30   
+    dw 0x0000
+    dw 0x1000
+    dq 1
 load_success:
    
 	in al, 0x92          
