@@ -34,22 +34,44 @@ contains
             pos = pos + 2
         end do
     end subroutine print_str
+    
+    subroutine print_digit(row, col, digit, attr)
+        integer, value :: row, col, digit
+        integer(kind=c_int8_t), value :: attr
+        integer :: pos
+        pos = ((row - 1) * 80 + (col - 1)) * 2 + 1
+        vga(pos) = int(48 + digit, c_int8_t)
+        vga(pos+1) = attr
+    end subroutine print_digit
 
 end module kernel_data
 
 subroutine kmain() bind(c, name="kmain")
+	
     use iso_c_binding
     use kernel_data
     implicit none
-    
+	integer :: counter, i, j
+   
     call init_vga()
 
-    ! Blue background = 0x1F
+
     call clear_vga(int(z'1F', c_int8_t))
 
-    ! Yellow text = 0x1E
+
     call print_str(1, 1, OS_NAME, 13, int(z'1E', c_int8_t))
 
+	counter = 0
     do
+		call print_digit(1, 79, mod(counter, 10), int(z'4F', c_int8_t))
+        
+        counter = counter + 1
+        
+        
+        do i = 1, 10000
+            do j = 1, 10000
+                
+            end do
+        end do
     end do
 end subroutine kmain
