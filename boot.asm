@@ -25,25 +25,25 @@ real_start:
     
     mov di, 3
 .retry_load:
-    xor ax, ax
+    
+    xor ax, ax    
     mov dl, [BOOT_DRIVE]
     int 0x13
-    jc .retry_dec
+    jc .retry_dec 
 
-  
-    mov ax, 0x1000
-    mov es, ax
-    xor bx, bx
     
-    mov ah, 0x02
-    mov al, 20          
-    mov ch, 0x00
-    mov dh, 0x00
+    mov ax, 0x1000      
+    mov es, ax
+    xor bx, bx          
+    
+    mov ah, 0x02        
+    mov al, 10          
+    mov ch, 0x00        
+    mov dh, 0x00        
     mov cl, 0x02        
     mov dl, [BOOT_DRIVE]
     int 0x13
     jnc load_success    
-
 .retry_dec:
     dec di
     jnz .retry_load
