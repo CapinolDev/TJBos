@@ -6,14 +6,11 @@ codeOffset equ 0x8
 dataOffset equ 0x10
 
 start:
-   
     jmp real_start
 
 BOOT_DRIVE db 0
 
 real_start:
-    mov [BOOT_DRIVE], dl 
-    
     cli
     xor ax, ax
     mov ds, ax
@@ -22,38 +19,25 @@ real_start:
     mov sp, 0x7c00
     sti
 
-    
+    mov [BOOT_DRIVE], dl 
+
     mov di, 3
 .retry_load:
-    
     mov ah, 0x42
-    mov dl, [BOOT_DRIVE]
-    mov si, disk_packet     
+    mov dl, [BOOT_DRIVE] 
+    mov si, disk_packet
     int 0x13
-    jnc load_success  
+    jnc load_success
 
-.retry_dec:
-
-    xor ax, ax
-    mov dl, [BOOT_DRIVE]
-    int 0x13
+   
+    mov byte [BOOT_DRIVE], 0x80
     
     dec di
     jnz .retry_load
     jmp disk_error
 
-
-align 4
-disk_packet:
-    db 0x10 
-    db 0x00 
-    dw 30   
-    dw 0x0000
-    dw 0x1000
-    dq 1
 load_success:
-   
-	in al, 0x92          
+    in al, 0x92          
     or al, 2             
     out 0x92, al
     cli
@@ -64,10 +48,39 @@ load_success:
     jmp codeOffset:protmodeMain
 
 disk_error:
+    push ax  
     mov ah, 0x0e
     mov al, 'E'
     int 0x10
+    
+    pop ax     
+    mov al, ah 
+    shr al, 4      
+    call print_hex
+    pop ax
+    mov al, ah     
+    and al, 0x0F
+    call print_hex
     jmp $
+
+print_hex:         
+    add al, '0'
+    cmp al, '9'
+    jbe .ok
+    add al, 7
+.ok:
+    mov ah, 0x0e
+    int 0x10
+    ret
+
+align 4
+disk_packet:
+    db 0x10          
+    db 0x00          
+    dw 20            
+    dw 0x0000        
+    dw 0x1000        
+    dq 1             
 
 align 4
 gdt_start:
