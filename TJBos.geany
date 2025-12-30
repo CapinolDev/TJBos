@@ -1,0 +1,47 @@
+[editor]
+line_wrapping=false
+line_break_column=72
+auto_continue_multiline=true
+
+[file_prefs]
+final_new_line=true
+ensure_convert_new_lines=false
+strip_trailing_spaces=false
+replace_tabs=false
+
+[indentation]
+indent_width=4
+indent_type=1
+indent_hard_tab_width=8
+detect_indent=false
+detect_indent_width=false
+indent_mode=2
+
+[project]
+name=TJBos
+base_path=/home/erdinc/projects/TJBos/
+description=
+file_patterns=
+
+[long line marker]
+long_line_behaviour=1
+long_line_column=72
+
+[files]
+current_page=3
+FILE_NAME_0=1393;Fortran;0;EUTF-8;1;1;0;%2Fhome%2Ferdinc%2Fprojects%2FTJBos%2Fkernel.f90;0;4
+FILE_NAME_1=359;None;0;EUTF-8;1;1;0;%2Fhome%2Ferdinc%2Fprojects%2FTJBos%2Flinker.ld;0;4
+FILE_NAME_2=0;ASM;0;EUTF-8;1;1;0;%2Fhome%2Ferdinc%2Fprojects%2FTJBos%2Flib.asm;0;4
+FILE_NAME_3=671;ASM;0;EUTF-8;1;1;0;%2Fhome%2Ferdinc%2Fprojects%2FTJBos%2Fboot.asm;0;4
+
+[VTE]
+last_dir=/home/erdinc/projects/TJBos
+
+[build-menu]
+ASMFT_00_LB=_Compile
+ASMFT_00_CM=nasm -f bin "%f" -o "%e.bin"
+ASMFT_00_WD=
+ASMFT_01_LB=Build
+ASMFT_01_CM=ld -s -o "%e" "%e.o"
+ASMFT_01_WD=
+filetypes=ASM;
