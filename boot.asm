@@ -51,6 +51,9 @@ real_start:
 
 load_success:
    
+	in al, 0x92          
+    or al, 2             
+    out 0x92, al
     cli
     lgdt [gdt_descriptor]
     mov eax, cr0
