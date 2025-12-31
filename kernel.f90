@@ -18,7 +18,8 @@ module kernel_data
     type(idt_entry), target, save :: idt(0:255)
     type(idtr_t), save :: idtr
     integer, save :: cursor_pos = 481
-
+	character, save :: command(10)
+	integer, save ::  commPos = 1
     interface
         function inb(port) bind(c, name="inb")
             use iso_c_binding
@@ -41,7 +42,7 @@ module kernel_data
     integer(kind=c_int8_t), pointer :: vga(:)
     character(len=1), dimension(0:127) :: kbd_map
     character(len=13), parameter :: OS_NAME = "TJBOS FORTRAN"
-    character(len=7), parameter :: OS_GREETING = "WELCOME!"
+    character(len=10), parameter :: OS_GREETING = "WELCOME :3"
 
 contains
 
@@ -95,7 +96,7 @@ contains
         kbd_map(int(z'0A')) = '9'; kbd_map(int(z'0B')) = '0'
         kbd_map(int(z'0C')) = '-'; kbd_map(int(z'0D')) = '='
 
-        ! --- Row 2: QWERTY... ---
+        
         kbd_map(int(z'10')) = 'Q'; kbd_map(int(z'11')) = 'W'
         kbd_map(int(z'12')) = 'E'; kbd_map(int(z'13')) = 'R'
         kbd_map(int(z'14')) = 'T'; kbd_map(int(z'15')) = 'Y'
@@ -168,6 +169,32 @@ contains
 
         call load_idt_asm(idtr)
     end subroutine init_idt
+    
+    subroutine process_command()
+        implicit none
+        character(len=10) :: cmd_str
+        integer :: i
+
+    
+        do i = 1, 10
+            cmd_str(i:i) = command(i)
+        end do
+
+    
+        cursor_pos = ((cursor_pos / 160) + 1) * 160 + 1
+
+        if (cmd_str(1:4) == "HELP") then
+            call print_str(cursor_pos/160 + 1, 1, "SYSTEM CMDS: HELP, CLEAR", 24, int(z'1B', c_int8_t))
+        else if (cmd_str(1:5) == "CLEAR") then
+            call clear_vga(int(z'1F', c_int8_t))
+            cursor_pos = 1 
+            call print_str(1, 1, OS_NAME, 13, int(z'1A', c_int8_t))
+            call print_str(2, 1, OS_GREETING, 10, int(z'1E', c_int8_t))
+            cursor_pos = 481
+        else
+            call print_str(cursor_pos/160 + 1, 1, "HUH?", 4, int(z'1C', c_int8_t))
+        end if
+    end subroutine
 end module kernel_data
 subroutine keyboard_handler_fortran() bind(c, name="keyboard_handler_fortran")
     use kernel_data
@@ -179,25 +206,39 @@ subroutine keyboard_handler_fortran() bind(c, name="keyboard_handler_fortran")
     scancode = inb(int(z'60'))
 
     
-    if (scancode == int(z'0E', c_int8_t)) then
-    
-        if (cursor_pos > 1) then
+    if (scancode == int(z'0E', c_int8_t)) then 
+        
+       
+        if (commPos > 1) then
+            
+            commPos = commPos - 1
+                       
+            command(commPos:commPos) = ' '
+            
             cursor_pos = cursor_pos - 2
             vga(cursor_pos) = int(32, c_int8_t) 
             vga(cursor_pos + 1) = int(z'1F', c_int8_t)
+            
+            
         end if
 
     else if (scancode == int(z'1C', c_int8_t)) then
-    
+		call process_command()
+        
+        commPos = 1
+        command = "          "
         cursor_pos = ((cursor_pos / 160) + 1) * 160 + 1
 
     else if (scancode > 0 .and. scancode < 128) then
     
         char_out = kbd_map(int(scancode))
-        if (char_out /= char(0)) then
+        if (char_out /= char(0) .and. commPos <= 10) then
             vga(cursor_pos) = int(ichar(char_out), c_int8_t)
             vga(cursor_pos + 1) = int(z'1E', c_int8_t)
             cursor_pos = cursor_pos + 2
+            
+            command(commPos:commPos) = char_out
+            commPos = commPos + 1
         end if
     end if
 
@@ -210,6 +251,7 @@ subroutine kmain() bind(c, name="kmain")
     call init_kbd_map()
     call clear_vga(int(z'1F', c_int8_t))
     call print_str(1, 1, OS_NAME, 13, int(z'1A', c_int8_t))
+    call print_str(2, 1, OS_GREETING, 10, int(z'1E', c_int8_t))
     
     call init_idt() 
     do
