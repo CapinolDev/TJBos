@@ -7,8 +7,25 @@ start:
     jmp short real_start
     nop
     
-    times 33 db 0 
-
+    db "MSWIN4.1" 
+	dw 512        
+	db 1          
+	dw 33         
+	db 2         
+	dw 224       
+	dw 2880      
+	db 0xF0      
+	dw 9         
+	dw 18        
+	dw 2         
+	dd 0         
+	dd 0         
+	db 0         
+	db 0         
+	db 0x29      
+	dd 0x12345678
+	db "TJBOS      " 
+	db "FAT12   "    
 BOOT_DRIVE db 0
 
 real_start:
@@ -97,7 +114,7 @@ align 4
 disk_packet:
     db 0x10          
     db 0x00          
-    dw 20            
+    dw 64       
     dw 0x0000        
     dw 0x1000        
     dq 1             

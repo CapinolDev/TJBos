@@ -2,7 +2,15 @@ module kernel_data
     use iso_c_binding
     implicit none
 
-    
+	integer(kind=c_int8_t), target, save :: sector_buffer(512)
+
+	interface
+		subroutine read_sector(lba, buffer) bind(c, name="read_sector")
+			import c_int, c_int8_t
+			integer(c_int), value :: lba
+			integer(c_int8_t) :: buffer(512)
+		end subroutine
+	end interface
     type, bind(c) :: idt_entry
         integer(c_int16_t) :: base_low
         integer(c_int16_t) :: selector
@@ -184,16 +192,100 @@ contains
         cursor_pos = ((cursor_pos / 160) + 1) * 160 + 1
 
         if (cmd_str(1:4) == "HELP") then
-            call print_str(cursor_pos/160 + 1, 1, "SYSTEM CMDS: HELP, CLEAR", 24, int(z'1B', c_int8_t))
+            call print_str(cursor_pos/160 + 1, 1, "SYSTEM CMDS: HELP, CLEAR, DIR", 29, int(z'1B', c_int8_t))
         else if (cmd_str(1:5) == "CLEAR") then
             call clear_vga(int(z'1F', c_int8_t))
             cursor_pos = 1 
             call print_str(1, 1, OS_NAME, 13, int(z'1A', c_int8_t))
             call print_str(2, 1, OS_GREETING, 10, int(z'1E', c_int8_t))
             cursor_pos = 481
+        else if (cmd_str(1:3) == "DIR") then
+            call list_files()
         else
             call print_str(cursor_pos/160 + 1, 1, "HUH?", 4, int(z'1C', c_int8_t))
         end if
+    end subroutine
+	
+	subroutine find_file(filename)
+        character(len=11) :: filename
+        integer :: i, j, offset
+        logical :: match
+        
+        call read_sector(51, sector_buffer)
+
+        do i = 0, 15
+            offset = (i * 32) + 1
+            match = .true.
+            
+            do j = 0, 10
+                if (char(int(sector_buffer(offset + j))) /= filename(j+1:j+1)) then
+                    match = .false.
+                    exit
+                end if
+            end do
+
+            if (match) then
+                call print_str(cursor_pos/160 + 1, 1, "FILE FOUND!", 11, int(z'1A', c_int8_t))
+                return
+            end if
+        end do
+       call print_str(cursor_pos/160 + 1, 1, "FILE NOT FOUND", 14, int(z'1C', c_int8_t))
+    end subroutine
+    
+    subroutine load_file(first_cluster, destination_ptr)
+        integer(c_int16_t), value :: first_cluster
+        type(c_ptr), value :: destination_ptr
+        integer(c_int16_t) :: current_cluster
+        integer :: lba, offset
+        
+        current_cluster = first_cluster
+        
+        do while (current_cluster < int(z'FF8')) 
+            lba = 65 + (int(current_cluster) - 2)
+            
+            call read_sector(lba, sector_buffer)
+            
+            current_cluster = get_fat_entry(current_cluster)
+        end do
+    end subroutine
+    function get_fat_entry(n) result(next_cluster)
+        integer(c_int16_t), value :: n
+        integer(c_int16_t) :: next_cluster
+        integer :: fat_sector, fat_offset
+        
+        fat_sector = 33 + (int(n) * 3 / 2) / 512
+        fat_offset = mod((int(n) * 3 / 2), 512)
+        
+        call read_sector(fat_sector, sector_buffer)
+        
+        if (mod(n, 2) == 0) then
+            next_cluster = iand(int(sector_buffer(fat_offset + 1)), z'FF') + &
+                           ishft(iand(int(sector_buffer(fat_offset + 2)), z'0F'), 8)
+        else
+            next_cluster = ishft(iand(int(sector_buffer(fat_offset + 1)), z'F0'), -4) + &
+                           ishft(iand(int(sector_buffer(fat_offset + 2)), z'FF'), 4)
+        end if
+    end function
+    
+    subroutine list_files()
+        integer :: i, offset, line_count, j
+        character(len=11) :: fname
+        
+        line_count = 0
+        call read_sector(51, sector_buffer)
+        
+        do i = 0, 15
+            offset = (i * 32) + 1
+            
+            if (sector_buffer(offset) == 0 .or. sector_buffer(offset) == int(z'E5', c_int8_t)) cycle
+            
+            do j = 0, 10
+                fname(j+1:j+1) = char(int(sector_buffer(offset + j)))
+            end do
+            
+            call print_str(cursor_pos/160 + 1 + line_count, 1, fname, 11, int(z'1B', c_int8_t))
+            line_count = line_count + 1
+        end do
     end subroutine
 end module kernel_data
 subroutine keyboard_handler_fortran() bind(c, name="keyboard_handler_fortran")

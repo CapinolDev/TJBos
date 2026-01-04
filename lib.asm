@@ -146,4 +146,61 @@ keyboard_handler_stub:
     out 0x20, al
     
     popad                 
-    iretd                 
+    iretd   
+             
+global read_sector
+
+read_sector:
+    push ebp
+    mov ebp, esp
+    pushad
+
+    mov eax, [ebp + 8]   
+    mov edi, [ebp + 12]  
+
+    
+    mov ebx, eax
+    shr ebx, 24
+    or bl, 0xE0
+    mov dx, 0x1F6
+    mov al, bl
+    out dx, al
+
+    
+    mov dx, 0x1F2
+    mov al, 1
+    out dx, al
+
+    
+    mov dx, 0x1F3
+    mov al, byte [ebp + 8]
+    out dx, al
+
+    
+    mov dx, 0x1F4
+    mov al, byte [ebp + 9]
+    out dx, al
+
+    
+    mov dx, 0x1F5
+    mov al, byte [ebp + 10]
+    out dx, al
+
+    
+    mov dx, 0x1F7
+    mov al, 0x20
+    out dx, al
+
+.wait_ready:
+    in al, dx
+    test al, 8           
+    jz .wait_ready
+
+    
+    mov ecx, 256
+    mov dx, 0x1F0
+    rep insw           
+
+    popad
+    pop ebp
+    ret 
