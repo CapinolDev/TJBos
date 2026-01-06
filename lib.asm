@@ -204,3 +204,49 @@ read_sector:
     popad
     pop ebp
     ret 
+    
+global memmove
+
+memmove:
+    push ebp
+    mov ebp, esp
+    push edi
+    push esi
+
+    mov edi, [ebp + 8]  
+    mov esi, [ebp + 12]  
+    mov ecx, [ebp + 16] 
+    
+    test ecx, ecx       
+    jz .done
+
+    cmp edi, esi       
+    jbe .copy_forward  
+    
+    add edi, ecx         
+    dec edi
+    add esi, ecx
+    dec esi
+    std                  
+    rep movsb
+    cld                  
+    jmp .done
+
+.copy_forward:
+    cld                  
+    rep movsb
+
+.done:
+    mov eax, [ebp + 8]   
+    pop esi
+    pop edi
+    pop ebp
+    ret
+
+global cpu_halt
+
+cpu_halt:
+	nop ;pls no racecunt
+    hlt
+    ret
+	;woow so hard!

@@ -10,7 +10,7 @@ start:
     db "MSWIN4.1" 
 	dw 512        
 	db 1          
-	dw 33         
+	dw 64         
 	db 2         
 	dw 224       
 	dw 2880      
