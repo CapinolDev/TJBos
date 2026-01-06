@@ -26,8 +26,8 @@ module kernel_data
     type(idt_entry), target, save :: idt(0:255)
     type(idtr_t), save :: idtr
     integer, save :: cursor_pos = 481
-	character, save :: command(10)
-	integer, save ::  commPos = 1
+	character, save, dimension(10) :: command, param
+	integer, save ::  commPos = 1, paramPos = 1
     interface
         function inb(port) bind(c, name="inb")
             use iso_c_binding
@@ -51,6 +51,11 @@ module kernel_data
     character(len=1), dimension(0:127) :: kbd_map
     character(len=13), parameter :: OS_NAME = "TJBOS FORTRAN"
     character(len=10), parameter :: OS_GREETING = "WELCOME :3"
+    character(len=10) :: OS_OUT_BUFF = "         "
+    character(len=4), parameter :: OS_USERNAME_DEFAULT = "NULLU"
+    character(len=10) :: OS_USERNAME = OS_USERNAME_DEFAULT
+    integer, save :: OS_USERNAME_LEN = 4
+    integer :: currInput = 0
 
 contains
 
@@ -180,27 +185,43 @@ contains
     
     subroutine process_command()
         implicit none
-        character(len=10) :: cmd_str
+        character(len=10) :: cmd_str, prm_str
         integer :: i
 
     
         do i = 1, 10
             cmd_str(i:i) = command(i)
+            prm_str(i:i) = param(i)
         end do
 
     
         cursor_pos = ((cursor_pos / 160) + 1) * 160 + 1
 
         if (cmd_str(1:4) == "HELP") then
-            call print_str(cursor_pos/160 + 1, 1, "SYSTEM CMDS: HELP, CLEAR, DIR", 29, int(z'1B', c_int8_t))
+            call print_str(cursor_pos/160 + 1, 1, "SYSTEM CMDS: HELP, CLEAR, DIR, ECHO, USERNAME", 45, int(z'1B', c_int8_t))
         else if (cmd_str(1:5) == "CLEAR") then
             call clear_vga(int(z'1F', c_int8_t))
             cursor_pos = 1 
             call print_str(1, 1, OS_NAME, 13, int(z'1A', c_int8_t))
             call print_str(2, 1, OS_GREETING, 10, int(z'1E', c_int8_t))
+            call print_str(2, 60, "USER", 4, int(z'1E', c_int8_t))
+			call print_str(2, 65, OS_USERNAME, OS_USERNAME_LEN, int(z'1F', c_int8_t))
             cursor_pos = 481
         else if (cmd_str(1:3) == "DIR") then
             call list_files()
+        else if (cmd_str(1:4)=="ECHO") then
+			call print_str(cursor_pos/160 + 1, 1, param, paramPos, int(z'1D', c_int8_t))
+		else if (cmd_str(1:4)=="ECHO") then
+			call print_str(cursor_pos/160 + 1, 1, param, paramPos, int(z'1D', c_int8_t))
+		else if (cmd_str(1:8)=="USERNAME") then
+				OS_USERNAME = "          "
+				OS_USERNAME_LEN = paramPos
+				do i=1,OS_USERNAME_LEN
+					OS_USERNAME(i:i) = param(i)
+				end do
+				call print_str(2, 60, "USER", 4, int(z'1E', c_int8_t))
+				call print_str(2, 65, OS_USERNAME, OS_USERNAME_LEN, int(z'1F', c_int8_t))
+				call print_str(cursor_pos/160 + 1, 1, "DONE", 4, int(z'1A', c_int8_t))
         else
             call print_str(cursor_pos/160 + 1, 1, "HUH?", 4, int(z'1C', c_int8_t))
         end if
@@ -287,6 +308,11 @@ contains
             line_count = line_count + 1
         end do
     end subroutine
+    
+    
+		
+	
+    
 end module kernel_data
 subroutine keyboard_handler_fortran() bind(c, name="keyboard_handler_fortran")
     use kernel_data
@@ -300,37 +326,66 @@ subroutine keyboard_handler_fortran() bind(c, name="keyboard_handler_fortran")
     
     if (scancode == int(z'0E', c_int8_t)) then 
         
-       
-        if (commPos > 1) then
-            
-            commPos = commPos - 1
-                       
-            command(commPos:commPos) = ' '
-            
-            cursor_pos = cursor_pos - 2
-            vga(cursor_pos) = int(32, c_int8_t) 
-            vga(cursor_pos + 1) = int(z'1F', c_int8_t)
-            
-            
-        end if
-
+       if (currInput == 0) then
+			if (commPos > 1) then
+				
+				commPos = commPos - 1
+						   
+				command(commPos:commPos) = ' '
+				
+				cursor_pos = cursor_pos - 2
+				vga(cursor_pos) = int(32, c_int8_t) 
+				vga(cursor_pos + 1) = int(z'1F', c_int8_t)
+				
+				
+			end if
+		else
+			if (paramPos > 1) then
+				
+				paramPos = paramPos - 1
+						   
+				param(paramPos:paramPos) = ' '
+				
+				cursor_pos = cursor_pos - 2
+				vga(cursor_pos) = int(32, c_int8_t) 
+				vga(cursor_pos + 1) = int(z'1F', c_int8_t)
+				
+				
+			end if
+		end if
     else if (scancode == int(z'1C', c_int8_t)) then
 		call process_command()
-        
+		currInput = 0
         commPos = 1
+        paramPos = 1
         command = "          "
         cursor_pos = ((cursor_pos / 160) + 1) * 160 + 1
 
     else if (scancode > 0 .and. scancode < 128) then
-    
-        char_out = kbd_map(int(scancode))
-        if (char_out /= char(0) .and. commPos <= 10) then
-            vga(cursor_pos) = int(ichar(char_out), c_int8_t)
-            vga(cursor_pos + 1) = int(z'1E', c_int8_t)
-            cursor_pos = cursor_pos + 2
-            
-            command(commPos:commPos) = char_out
-            commPos = commPos + 1
+		if (scancode == 57) then 
+			if (currInput == 0) then
+				currInput = 1
+			end if
+		end if
+		char_out = kbd_map(int(scancode))
+		if (currInput == 0) then
+			if (char_out /= char(0) .and. commPos <= 10) then
+				vga(cursor_pos) = int(ichar(char_out), c_int8_t)
+				vga(cursor_pos + 1) = int(z'1E', c_int8_t)
+				cursor_pos = cursor_pos + 2
+					
+				command(commPos:commPos) = char_out
+				commPos = commPos + 1
+			end if
+		else 
+			if (char_out /= char(0) .and. paramPos <= 10) then
+				vga(cursor_pos) = int(ichar(char_out), c_int8_t)
+				vga(cursor_pos + 1) = int(z'1E', c_int8_t)
+				cursor_pos = cursor_pos + 2
+					
+				param(paramPos:paramPos) = char_out
+				paramPos = paramPos + 1
+			end if
         end if
     end if
 
@@ -344,6 +399,8 @@ subroutine kmain() bind(c, name="kmain")
     call clear_vga(int(z'1F', c_int8_t))
     call print_str(1, 1, OS_NAME, 13, int(z'1A', c_int8_t))
     call print_str(2, 1, OS_GREETING, 10, int(z'1E', c_int8_t))
+    call print_str(2, 60, "USER", 4, int(z'1E', c_int8_t))
+    call print_str(2, 65, OS_USERNAME, OS_USERNAME_LEN, int(z'1F', c_int8_t))
     
     call init_idt() 
     do
