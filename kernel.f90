@@ -220,8 +220,6 @@ contains
             call list_files()
         else if (cmd_str(1:4)=="ECHO") then
 			call print_str(cursor_pos/160 + 1, 1, param, paramPos, int(z'1D', c_int8_t))
-		else if (cmd_str(1:4)=="ECHO") then
-			call print_str(cursor_pos/160 + 1, 1, param, paramPos, int(z'1D', c_int8_t))
 		else if (cmd_str(1:8)=="USERNAME") then
 				OS_USERNAME = "          "
 				OS_USERNAME_LEN = paramPos
