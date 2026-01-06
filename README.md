@@ -1,4 +1,4 @@
-#TJBos - An Operating System in Fortran
+# TJBos - An Operating System in Fortran
 
 TJBos (TJB Operating System) is an experimental hobby operating system with a kernel written primarily in Fortran 90, complemented by x86 Assembly for low-level operations. It's a minimal bootable OS that runs in 32-bit protected mode, featuring a simple text-based shell, keyboard input, VGA output, basic commands, and FAT12 filesystem support.
 ## Features
@@ -18,16 +18,19 @@ TJBos (TJB Operating System) is an experimental hobby operating system with a ke
 - Includes a sample HELLO.TXT file with a greeting from the OS
 
 
-## Build Requirements
+## Build & Run
+### Prerequisites
+You need an `i686-elf` cross-compiler toolchain.
+* **Assembler:** `nasm`
+* **Compiler:** `gfortran`, `gcc`
+* **Emulator:** `qemu-system-i386`
 
-NASM (for assembling .asm files)
-i686-elf-gfortran (cross-compiling GNU Fortran toolchain)
-i686-elf-ld and i686-elf-gcc (for linking)
-mtools (for mcopy to create floppy image)
-QEMU (recommended for testing)
-
-You can install a cross-compiler toolchain following guides like the osdev.org wiki Bare Bones tutorial.
-
+### Steps
+1. Clone the repo.
+2. Run `./build.sh` to generate `tjbos.img`.
+3. Launch with QEMU:
+   ```bash
+   qemu-system-i386 -fda tjbos.img ```
 ## Project Structure
 
 [boot.asm](boot.asm) - Bootloader
