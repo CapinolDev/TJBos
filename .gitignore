@@ -1,0 +1,10 @@
+
+*.o
+*.obj
+*.bin
+*.elf
+*.img
+*.mod
+*.smod
+*.geany
+
