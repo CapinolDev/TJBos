@@ -1,9 +1,8 @@
 
 *.o
 *.obj
-*.bin
 *.elf
-*.img
+*.bin
 *.mod
 *.smod
 *.geany
