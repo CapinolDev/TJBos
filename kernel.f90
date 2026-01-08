@@ -241,7 +241,8 @@ contains
             else
                 call print_str(cursor_pos/160 + 1, 1, "USAGE: CAT FILE.TXT", 19, int(z'1C', c_int8_t))
             end if
-		
+		else if (cmd_str(1:3) == "BYE") then
+			
         else
             call print_str(cursor_pos/160 + 1, 1, "HUH?", 4, int(z'1C', c_int8_t))
         end if
@@ -476,6 +477,23 @@ contains
         cursor_pos = cursor_pos + 160
     end subroutine
     
+    subroutine OS_INTRO()
+		integer :: k, q, t
+		do k=0,60
+			do q=0,80
+				call print_str(k, q, "F", 1, int(z'1F', c_int8_t))
+				do t=0,300000
+				end do
+			end do
+		end do
+		do k=0,80
+			do q=0,80
+				call print_str(k, q, " ", 1, int(z'1F', c_int8_t))
+				do t=0,100000
+				end do
+			end do
+		end do
+    end subroutine
 end module kernel_data
 subroutine keyboard_handler_fortran() bind(c, name="keyboard_handler_fortran")
     use kernel_data
@@ -561,9 +579,14 @@ subroutine keyboard_handler_fortran() bind(c, name="keyboard_handler_fortran")
 end subroutine
 subroutine kmain() bind(c, name="kmain")
     use kernel_data
+    
     implicit none
+    integer :: tempTimer
     call init_vga()
     call init_kbd_map()
+    call OS_INTRO()
+    do tempTimer=1,10000000
+    end do
     call clear_vga(int(z'1F', c_int8_t))
     call print_str(1, 1, OS_NAME, 13, int(z'1A', c_int8_t))
     call print_str(2, 1, OS_GREETING, 10, int(z'1E', c_int8_t))
