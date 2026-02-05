@@ -17,6 +17,9 @@ TJBos (TJB Operating System) is an experimental hobby operating system with a ke
 - Basic FAT12 filesystem reading (root directory and file loading)
 - Includes a sample HELLO.TXT file with a greeting from the OS
 
+## AI in this project
+As you might have noticed, there are a lot of comments in the .asm files.
+Yes these comments are indeed made by AI - the code isn't, and you can see that in the commit history :)
 
 ## Build & Run
 ### Prerequisites
